@@ -91,10 +91,13 @@ othercompare[,"logstudies"] <- log(othercompare$nstudies)
 othercompare[is.infinite(othercompare$logstudies),"logstudies"] <-0
 
 ### Plot of Filazzola et al. studies
-ggplot(filacompare, aes(x=rep, y=logstudies, color=type)) +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+plot1 <- ggplot(filacompare, aes(x=rep, y=logstudies, color=type)) +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+plot1
 
 ### Plot of Other studies
-ggplot(othercompare, aes(x=rep, y=logstudies, color=type))  +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+plot2 <- ggplot(othercompare, aes(x=rep, y=logstudies, color=type))  +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+plot2
 
+gridExtra::grid.arrange(plot1, plot2, ncol=2)
 ```
 
