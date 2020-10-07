@@ -1,8 +1,8 @@
 ---
 title: "Space vs time in ecology research"
-author: "Alessandro Filazzola"
+author: "Alessandro Filazzola & JC Cahill"
 date: "10/7/2020"
-output: html_document
+output: 
   html_document:
     theme: flatly
     toc: yes
@@ -14,26 +14,87 @@ editor_options:
   chunk_output_type: console
 ---
 
+![](./mountains.png)
+
+### Quantifying space and time surveys in ecology
+
+Here we reviewed meta-analysis that reported the number of sites and duration of years associated with each study. The goal is to get a coarse overview of temporal and spatial replication in ecology research. 
+
+
+Image by <a href="https://pixabay.com/users/moinzon-2433302/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1412683">Michi S</a> from <a href="https://pixabay.com/?utm_source=link-attribution&amp;utm_medium=referral&amp;utm_campaign=image&amp;utm_content=1412683">Pixabay</a>
+
+
 ### Load Libraries
-```{r}
+```{r warning=FALSE, message=FALSE}
+## Libraries
+library(tidyverse)
+
+## Extra code and functions
+source("functions.r")
+
+## how many studies based on each duration
+getYears <- function(x, dataset){
+nfilt <- dataset %>% filter(Nyears > x) %>% nrow()
+return(as.vector(nfilt))
+}
+
+## how many studies based on each site
+getSites <- function(x, dataset){
+nfilt <- dataset %>% filter(Nsite > x) %>% nrow()
+return(as.vector(nfilt))
+}
 
 ```
 
 ### Load data
-```{r}
+```{r warning=FALSE, message=FALSE}
+## Load Filazzola et al. studies
+GI <- read.csv("data//sitedurationGI.csv") ## GI meta-analysis
+waterQ <- read.csv("data//studyDurationWaterQ.csv") ## Water quality synthesis
+grazing <- read.csv("data//GrazingstudiesDuration.csv") ## Grazing meta-analysis
+filacompare <- rbind(GI, waterQ, grazing)
+filacompare[,"study"] <- rep(c("GI","waterQ","grazing"), each=60)
 
-GI <- read.csv("sitedurationGI.csv")
-waterQ <- read.csv("studyDurationWaterQ.csv")
-grazing <- read.csv("GrazingstudiesDuration.csv")
-allcompare <- rbind(GI, waterQ, grazing)
-allcompare[,"study"] <- rep(c("GI","waterQ","grazing"), each=60)
+
+####  Load other ecology studies
+## Li, W., Jin, C., Guan, D., Wang, Q., Wang, A., Yuan, F., & Wu, J. (2015). The effects of simulated nitrogen deposition on plant root traits: a meta-analysis. Soil Biology and Biochemistry, 82, 112-118.
+# https://www.sciencedirect.com/science/article/pii/S0038071715000115?casa_token=ailE-bZ_3LEAAAAA:3BnJdVitzKbrhLBiCNnriP41sY3-fgTrnxQgkITynyxkf8ogDZIExWHAAD9VCxXzH7TFVs-SUhOo
+lisoil <- read.csv("data//LiSoilduration.csv")
+studiesYears <- unlist(sapply(1:30, FUN=  getYears, dataset=lisoil))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=lisoil))
+liDF <- data.frame(study = "LiSoil",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+## Bowles, T. M., Jackson, L. E., Loeher, M., & Cavagnaro, T. R. (2017). Ecological intensification and arbuscular mycorrhizas: a meta‐analysis of tillage and cover crop effects. Journal of Applied Ecology, 54(6), 1785-1793.
+# https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/1365-2664.12815
+bowles <- read.csv("data//raw//Bowles2017.csv")
+studiesYears <- unlist(sapply(1:30, FUN=  getYears, dataset=bowles))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=bowles))
+bowlesDF <- data.frame(study = "bowles",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+## Jia, S., Wang, X., Yuan, Z., Lin, F., Ye, J., Hao, Z., & Luskin, M. S. (2018). Global signal of top-down control of terrestrial plant communities by herbivores. Proceedings of the National Academy of Sciences, 115(24), 6237-6242.
+# https://www.pnas.org/content/115/24/6237.short
+jia <- read.csv("data//raw//Jia2018.csv")
+studiesYears <- unlist(sapply(1:30, FUN=  getYears, dataset=jia))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=jia))
+jiaDF <- data.frame(study = "Jia",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+othercompare <- rbind(liDF, bowlesDF,jiaDF)
 ```
 
 
 ### Plot data
-```{r}
-ggplot(allcompare, aes(x=rep, y=log(nstudies), color=type)) +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+```{r warning=FALSE, message=FALSE}
+## Log-transform and drop -inf
+filacompare[,"logstudies"] <- log(filacompare$nstudies)
+filacompare[is.infinite(filacompare$logstudies),"logstudies"] <-0
+othercompare[,"logstudies"] <- log(othercompare$nstudies)
+othercompare[is.infinite(othercompare$logstudies),"logstudies"] <-0
+
+### Plot of Filazzola et al. studies
+ggplot(filacompare, aes(x=rep, y=logstudies, color=type)) +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+
+### Plot of Other studies
+ggplot(othercompare, aes(x=rep, y=logstudies, color=type))  +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+
 ```
 
-
-```
