@@ -1,0 +1,39 @@
+---
+title: "Space vs time in ecology research"
+author: "Alessandro Filazzola"
+date: "10/7/2020"
+output: html_document
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_depth: 3
+    toc_float: yes
+  pdf_document:
+    toc: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+### Load Libraries
+```{r}
+
+```
+
+### Load data
+```{r}
+
+GI <- read.csv("sitedurationGI.csv")
+waterQ <- read.csv("studyDurationWaterQ.csv")
+grazing <- read.csv("GrazingstudiesDuration.csv")
+allcompare <- rbind(GI, waterQ, grazing)
+allcompare[,"study"] <- rep(c("GI","waterQ","grazing"), each=60)
+```
+
+
+### Plot data
+```{r}
+ggplot(allcompare, aes(x=rep, y=log(nstudies), color=type)) +facet_grid(study~., scales = "free") + geom_point(size=2) + theme_Publication() + ylab("Number of Studies") + xlab("Replication") + scale_color_manual(values=c("orange","blue"))
+```
+
+
+```
