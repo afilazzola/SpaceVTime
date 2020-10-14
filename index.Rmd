@@ -101,3 +101,16 @@ plot2
 gridExtra::grid.arrange(plot1, plot2, ncol=2)
 ```
 
+### Vote count data
+```{r}
+### Total studies per meta
+totalN1 <- filacompare %>% group_by(study) %>% summarize(totalStudies = max(nstudies)) 
+totalN1
+totalN2 <- othercompare %>% group_by(study) %>% summarize(totalStudies = max(nstudies)) 
+totalN2
+sum(totalN2$totalStudies, totalN1$totalStudies) ## total studies examined
+
+## Load votecount data
+voteCount <- read.csv("data//voteCountMetas.csv")
+sum(voteCount$Nsites=="yes", na.rm=T) # n meta with sites 
+sum(voteCount$NyearsSingle=="yes", na.rm=T) # n meta with years
