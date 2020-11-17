@@ -38,6 +38,13 @@ nfilt <- dataset %>% filter(Nyears > x) %>% nrow()
 return(as.vector(nfilt))
 }
 
+## how many studies based on each duration
+getYear <- function(x, dataset){
+nfilt <- dataset %>% filter(Nyear > x) %>% nrow()
+return(as.vector(nfilt))
+}
+
+
 ## how many studies based on each site
 getSites <- function(x, dataset){
 nfilt <- dataset %>% filter(Nsite > x) %>% nrow()
@@ -49,11 +56,27 @@ return(as.vector(nfilt))
 ### Load data
 ```{r warning=FALSE, message=FALSE}
 ## Load Filazzola et al. studies
-GI <- read.csv("data//sitedurationGI.csv") ## GI meta-analysis
-waterQ <- read.csv("data//studyDurationWaterQ.csv") ## Water quality synthesis
-grazing <- read.csv("data//GrazingstudiesDuration.csv") ## Grazing meta-analysis
-filacompare <- rbind(GI, waterQ, grazing)
-filacompare[,"study"] <- rep(c("GI","waterQ","grazing"), each=60)
+
+## GI meta-analysis
+GIraw <- read.csv("data//raw//Filazzola et al. GI.csv", stringsAsFactors = F) ## GI meta-analysis
+studiesYears <- unlist(sapply(1:30, FUN=  getYear, dataset=GIraw))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=GIraw))
+GIDF <- data.frame(study = "GI",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+
+## Water-quality meta-analysis
+waterQraw <- read.csv("data//raw//Filazzola et al. Chla.csv", stringsAsFactors = F) ## Water quality synthesis
+studiesYears <- unlist(sapply(1:30, FUN=  getYear, dataset=waterQraw))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=waterQraw))
+chlaDF <- data.frame(study = "WaterQ",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+## Grazing meta-analysis
+grazingraw <- read.csv("data//raw//Filazzola et al. 2020 Grazing.csv", stringsAsFactors = F) ## Grazing meta-analysis
+studiesYears <- unlist(sapply(1:30, FUN=  getYear, dataset=grazingraw))
+studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=grazingraw))
+grazeDF <- data.frame(study = "Grazing",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
+
+filacompare <- rbind(GIDF, chlaDF,grazeDF)
 
 
 ####  Load other ecology studies
@@ -79,6 +102,25 @@ studiesSites <- unlist(sapply(1:30, FUN=  getSites, dataset=jia))
 jiaDF <- data.frame(study = "Jia",rep = 1:30, type = rep(c("years","sites"),each=30), nstudies=c(studiesYears,studiesSites))
 
 othercompare <- rbind(liDF, bowlesDF,jiaDF)
+```
+
+### Number of studies that included year and site
+```{r}
+## Create function that counts the number of studies with multiple replicates
+countReps <- function(df){
+  nsite <- nrow(df[df$Nsite>1,])
+  nyear <- nrow(df[df$Nyear>1,])
+  nboth <- nrow(df[df$Nyear>1 & df$Nsite>1,])
+  noRep <- nrow(df[df$Nyear==1 & df$Nsite==1,])
+  totalStudies <- nrow(df)
+  return(data.frame(nsite, nyear, nboth,noRep, totalStudies))
+}
+
+## Count replication in time and space
+allDf <- list(lisoil, bowles, jia,GIraw,waterQraw,grazingraw)
+allOut <- sapply(allDf, countReps)
+allOut
+
 ```
 
 
