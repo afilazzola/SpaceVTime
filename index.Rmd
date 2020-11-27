@@ -156,3 +156,31 @@ sum(totalN2$totalStudies, totalN1$totalStudies) ## total studies examined
 voteCount <- read.csv("data//voteCountMetas.csv")
 sum(voteCount$Nsites=="yes", na.rm=T) # n meta with sites 
 sum(voteCount$NyearsSingle=="yes", na.rm=T) # n meta with years
+```
+
+
+### Compare replication and effect size
+```{r}
+library(metafor)
+
+## Calculate effect sizes for studies with just estimates
+effectSizes <- read.csv("data//raw//EffectSizes.csv")
+
+meta.ready <- escalc(n1i = treatmentN, n2i = controlN, m1i = treatment, m2i = control, sd1i = treatmentSD, sd2i = controlSD, data = effectSizes, measure = "ROM", append = TRUE)
+meta.ready <- meta.ready[!is.na(meta.ready$yi),]
+meta.ready[,"n"] <- (meta.ready$treatmentN+meta.ready$controlN)/2
+
+effectRep <- meta.ready %>%  select(Meta, n, yi, vi) %>% data.frame()
+
+
+## Join with studies that already have effect sizes
+effectOthers <- read.csv("data//effectSizeReplication.csv")
+effectNAll <- rbind(effectRep, effectOthers)
+
+### Effect estimate
+plot1 <- ggplot(effectNAll, aes(x=n, y=abs(yi), color=Meta)) + geom_point() + ylab("Effect size (LRR)") + xlab("Replication") + theme_Publication()
+
+plot2 <- ggplot(effectNAll %>% filter(vi <6), aes(x=n, y=vi, color=Meta)) + geom_point() + ylab("Error estimate") + xlab("Replication") + theme_Publication()
+
+gridExtra::grid.arrange(plot1, plot2, ncol=2)
+```
