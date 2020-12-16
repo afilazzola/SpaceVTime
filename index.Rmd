@@ -178,9 +178,20 @@ effectOthers <- read.csv("data//effectSizeReplication.csv")
 effectNAll <- rbind(effectRep, effectOthers)
 
 ### Effect estimate
-plot1 <- ggplot(effectNAll, aes(x=n, y=abs(yi), color=Meta)) + geom_point() + ylab("Effect size (LRR)") + xlab("Replication") + theme_Publication()
+plot1 <- ggplot(effectNAll, aes(x=n, y=abs(yi), color=Meta)) + geom_point() + ylab("Effect size (LRR)") + xlab("Replication") + theme_Publication() 
 
-plot2 <- ggplot(effectNAll %>% filter(vi <6), aes(x=n, y=vi, color=Meta)) + geom_point() + ylab("Error estimate") + xlab("Replication") + theme_Publication()
+plot2 <- ggplot(effectNAll %>% filter(vi <6), aes(x=n, y=vi, color=Meta)) + geom_point() + ylab("Error estimate") + xlab("Replication") + theme_Publication()  
 
 gridExtra::grid.arrange(plot1, plot2, ncol=2)
+
+
+## Plot just grazing and green infrastructurre data
+FilaOnly <- effectNAll %>% filter(Meta %in% c("grazing","greenInfrastructure"))
+
+plot1 <- ggplot(FilaOnly, aes(x=n, y=abs(yi), color=Meta)) + geom_point() + ylab("Effect size (LRR)") + xlab("Replication") + theme_Publication() + scale_colour_manual(values=c("#00BFFF", "#F5A500"))
+
+plot2 <- ggplot(FilaOnly %>% filter(vi <6), aes(x=n, y=vi, color=Meta)) + geom_point() + ylab("Error estimate") + xlab("Replication") + theme_Publication() + scale_colour_manual(values=c("#00BFFF", "#F5A500"))
+
+gridExtra::grid.arrange(plot1, plot2, ncol=2)
+
 ```
