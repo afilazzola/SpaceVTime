@@ -160,7 +160,7 @@ sum(voteCount$NyearsSingle=="yes", na.rm=T) # n meta with years
 
 
 ### Compare replication and effect size
-```{r}
+```{r warning=F, message=FALSE}
 library(metafor)
 
 ## Calculate effect sizes for studies with just estimates
@@ -193,5 +193,60 @@ plot1 <- ggplot(FilaOnly, aes(x=n, y=abs(yi), color=Meta)) + geom_point() + ylab
 plot2 <- ggplot(FilaOnly %>% filter(vi <6), aes(x=n, y=vi, color=Meta)) + geom_point() + ylab("Error estimate") + xlab("Replication") + theme_Publication() + scale_colour_manual(values=c("#00BFFF", "#F5A500"))
 
 gridExtra::grid.arrange(plot1, plot2, ncol=2)
+
+```
+
+
+
+### Determine trade-off sensitivity of sample vs. within-study replication
+```{r warning=FALSE, message=FALSE}
+
+simulatedData <- data.frame( aridityLevel= rep(1:5, each=1000),
+                              aridity = c(rep("Hyper-arid", 1000),rep("Arid", 1000),rep("Semi-Arid", 1000),
+                                         rep("Mesic", 1000),rep("Hyper-mesic", 1000)),
+                               richness = c(rnorm(1000, 30, sd=10 ),rnorm(1000, 32.5, sd=10),rnorm(1000, 35, sd=10 ),
+                                            rnorm(1000, 37.5, sd=10 ),rnorm(1000, 40, sd=10 )))
+
+ggplot(simulatedData, aes(x=reorder(aridity,aridityLevel), y= richness)) + geom_boxplot() + xlab("Aridity") + ylab("Community Richness") + theme_Publication()
+
+## True effect
+m1 <- lm(richness ~ aridityLevel, data=simulatedData)
+TrueCoef <- coef(m1)[2]
+TrueR2 <- summary(m1)$r.squared
+Truepval <- summary(m1)$coefficients[1,4]
+Truepval <- 7.988941e-16
+
+
+## Iterate through all the possible smaller subsets of data
+
+
+simulatedData[,"kfoldGroups"] <- kfold(simulatedData, k=1000, by=simulatedData$aridity)
+
+coefProp <- lapply(1:999, function(i){
+## Run model but with subset data
+m2 <- lm(richness ~ aridityLevel, data=simulatedData %>% filter(!kfoldGroups %in% 1:i))
+SubsetCoef <- coef(m2)[2]
+SubsetR2 <- summary(m2)$r.squared
+Subsetpval <- summary(m2)$coefficients[2,4]
+
+## Difference in coef
+coefDiff <- 1-abs(TrueCoef-SubsetCoef)
+R2Diff <- 1-abs(TrueR2-SubsetR2)/TrueR2
+pvalDiff <- 1-abs(Truepval-Subsetpval)
+
+data.frame(coef = coefDiff, R2= R2Diff, Pval= pvalDiff)
+})
+
+modelDiff <- do.call(rbind, coefProp)
+modelDiff[,"sampleSize"] <- 999:1
+modelDiff[,"sampleSizeProp"] <- modelDiff$sampleSize/1000
+
+plot1 <- ggplot(modelDiff, aes(x= sampleSizeProp*100, y=coef*100)) + geom_point() + ylim(0,100) + theme_Publication() +
+  xlab("Percent total sample size") + ylab("Delta Coefficient (%)") + scale_x_reverse()
+plot2 <-  ggplot(modelDiff, aes(x= sampleSizeProp*100, y=R2*100)) + geom_point() + ylim(10,100) + theme_Publication() + 
+  xlab("Percent total sample size") + ylab("Delta R2 (%)")+ scale_x_reverse()
+
+gridExtra::grid.arrange(plot1, plot2, ncol=2)
+
 
 ```
